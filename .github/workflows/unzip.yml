@@ -4,22 +4,30 @@ on:
   push:
     paths:
       - '**.zip'
+  workflow_dispatch:
 
 jobs:
   unzip:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Unzip the uploaded .zip file
-        run: |
-          unzip -o SC web.zip -d hasil-unzip
+      - name: Clean previous unzip
+        run: rm -rf hasil-unzip
 
-      - name: Commit & Push hasil unzip
+      - name: Unzip .zip secara otomatis
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          filename=$(basename -s .zip *.zip)
+          unzip -o "$filename.zip" -d hasil-unzip
+
+      - name: Commit hasil ekstrak
+        run: |
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add hasil-unzip
-          git commit -m "Unzipped folderku.zip automatically"
-          git push
+          git commit -m "Auto-unzip $filename.zip"
+          git push origin HEAD:${{ github.ref_name }}
